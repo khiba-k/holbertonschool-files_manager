@@ -25,7 +25,7 @@ class RedisClient {
     });
   }
 
-  // Set key value pair with duration
+  // Set key value pair  duration
   async set(key, value, duration) {
     return new Promise((resolve, reject) => {
       this.client.setex(key, duration, value, (err) => {
