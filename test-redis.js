@@ -5,6 +5,8 @@ async function connectRedis() {
 
   client.on("connect", () => {
     console.log("Client connected successfully");
+    const isConnected = client.connected;
+    console.log(isConnected);
   });
 }
 

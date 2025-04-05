@@ -1,39 +1,48 @@
-import { createClient } from "redis";
+import redis from "redis";
 
 class RedisClient {
   constructor() {
-    // Instantiate connection to redis-server
-    this.client = createClient();
+    // Connect to redis server
+    this.client = redis.createClient();
 
     this.client.on("error", (err) => {
-      console.log("Error: ", err);
-    });
-
-    // Add a listener for the "connect" event to set the connected flag
-    this.client.on("connect", () => {
-      this.connected = true;
-      console.log("Redis connected!");
+      console.error("Redis error:", err);
     });
   }
 
-  // Check if connection is successful
+  // Check if client connected to server successfully
   isAlive() {
-    return this.connected || false;
+    return this.client.connected;
   }
 
-  // Get value of specific key
+  // Get stored value by key
   async get(key) {
-    return await this.client.get(key);
+    return new Promise((resolve, reject) => {
+      this.client.get(key, (err, result) => {
+        if (err) reject(err);
+        resolve(result);
+      });
+    });
   }
 
   // Set key value pair with duration
   async set(key, value, duration) {
-    await this.client.set(key, value, "EX", duration);
+    return new Promise((resolve, reject) => {
+      this.client.setex(key, duration, value, (err) => {
+        if (err) reject(err);
+        resolve();
+      });
+    });
   }
 
-  // Delete key and it's value
+  // Delete key value pair
   async del(key) {
-    await this.client.del(key);
+    return new Promise((resolve, reject) => {
+      this.client.del(key, (err) => {
+        if (err) reject(err);
+        resolve();
+      });
+    });
   }
 }
 
