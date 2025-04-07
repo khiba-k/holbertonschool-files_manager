@@ -1,4 +1,5 @@
 import pkg from "mongodb";
+
 const { MongoClient } = pkg;
 
 const host = process.env.DB_HOST || "localhost";
@@ -25,28 +26,14 @@ class DBClient {
     return !!this.db;
   }
 
-  // Count number of users
   async nbUsers() {
-    try {
-      const db = this.client.db(this.database);
-      const users = db.collection("users");
-      const numOfusers = await users.countDocuments();
-      return numOfusers;
-    } catch (error) {
-      console.log("Error fetching number of users: ", error);
-    }
+    if (!this.db) return 0;
+    return this.db.collection("users").countDocuments();
   }
 
   async nbFiles() {
-    try {
-      const db = this.client.db(this.database);
-      const files = db.collection("files");
-      const numOfFiles = await files.countDocuments();
-
-      return numOfFiles;
-    } catch (error) {
-      console.log("Error fetching number of files");
-    }
+    if (!this.db) return 0;
+    return this.db.collection("files").countDocuments();
   }
 }
 
