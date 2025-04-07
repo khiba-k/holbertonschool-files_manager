@@ -1,35 +1,28 @@
 import pkg from "mongodb";
 const { MongoClient } = pkg;
 
+const host = process.env.DB_HOST || "localhost";
+const port = process.env.DB_PORT || 27017;
+const database = process.env.DB_DATABASE || "files_manager";
+const url = `mongodb://${host}:${port}`;
+
 class DBClient {
   constructor() {
-    try {
-      const host = process.env.DB_HOST || "localhost";
-      const port = process.env.DB_PORT || "27017";
-      this.database = process.env.DB_DATABASE || "files_manager";
-
-      const uri = `mongodb://${host}:${port}/${this.database}`;
-
-      this.client = MongoClient(uri);
-    } catch (error) {
-      console.log("Error establishing mongo connection: ".error);
-    }
+    this.client = new MongoClient(url, { useUnifiedTopology: true });
+    this.db = null;
+    this.client
+      .connect()
+      .then(() => {
+        this.db = this.client.db(database);
+      })
+      .catch((err) => {
+        console.error("MongoDB connection error:", err);
+        this.db = null;
+      });
   }
 
-  // Check if connection is successful
-  async isAlive() {
-    try {
-      // Connect to db
-      await this.client.connect();
-
-      // Check if connection successful
-      await this.client.db(this.database).command({ ping: 1 });
-      console.log("Successfully connected to MongoDB");
-      return true;
-    } catch (error) {
-      console.log("Failed to connect to MongoDB");
-      return Promise.resolve(false);
-    }
+  isAlive() {
+    return !!this.db;
   }
 
   // Count number of users
