@@ -35,6 +35,11 @@ class DBClient {
     if (!this.db) return 0;
     return this.db.collection("files").countDocuments();
   }
+
+  async checkEmail(email) {
+    if (!this.db) return 0;
+    return await this.db.users.countDocuments({ email: email });
+  }
 }
 
 const dbClient = new DBClient();
