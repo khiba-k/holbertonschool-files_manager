@@ -28,7 +28,7 @@ class DBClient {
       return true;
     } catch (error) {
       console.log("Failed to connect to MongoDB");
-      return false;
+      return Promise.resolve(false);
     }
   }
 
