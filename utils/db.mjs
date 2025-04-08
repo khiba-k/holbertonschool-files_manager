@@ -1,7 +1,7 @@
 import { createHash } from "crypto";
 import pkg from "mongodb";
 
-const { MongoClient } = pkg;
+const { MongoClient, ObjectId } = pkg;
 
 const host = process.env.DB_HOST || "localhost";
 const port = process.env.DB_PORT || 27017;
@@ -65,7 +65,7 @@ class DBClient {
           .digest("hex");
 
         if (hashedPassword == userPassword) {
-          return user.insertedId;
+          return user["_id"];
         } else {
           console.log("Incorrect password");
           return false;
@@ -76,6 +76,23 @@ class DBClient {
       }
     } catch (error) {
       console.log("Error checking user: ", error);
+    }
+  }
+
+  async getUser(userId) {
+    try {
+      const user = await this.db
+        .collection("users")
+        .findOne({ _id: new ObjectId(userId) });
+      console.log("User: ", user);
+
+      if (user) {
+        return user;
+      } else {
+        return false;
+      }
+    } catch (error) {
+      console.log("Error getting user: ", error);
     }
   }
 }

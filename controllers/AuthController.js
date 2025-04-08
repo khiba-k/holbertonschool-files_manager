@@ -22,10 +22,9 @@ const getConnect = async (emailPassPair) => {
       const userToken = uuidv4();
 
       //   Create session and store in redis
-      const userId = userExists;
+      const userId = String(userExists);
       const sessionKey = `auth_${userToken}`;
       await redisClient.set(sessionKey, userId, 86400);
-      console.log("UserId: ", userId);
 
       return userToken;
     }
@@ -34,4 +33,44 @@ const getConnect = async (emailPassPair) => {
   }
 };
 
-export default getConnect;
+const disconnect = async (token) => {
+  try {
+    const key = `auth_${token}`;
+    const userId = await redisClient.get(key);
+
+    if (userId == null) {
+      console.log("Token does not exist");
+      return false;
+    } else {
+      // If token exists delete the key value pair
+      await redisClient.del(key);
+      return true;
+    }
+  } catch (error) {
+    console.log("Error deleting session: ", error);
+  }
+};
+
+const getCurrentUser = async (token) => {
+  try {
+    const key = `auth_${token}`;
+    const userId = await redisClient.get(key);
+
+    if (userId == null) {
+      console.log("Token does not exist");
+      return false;
+    } else {
+      const user = await dbClient.getUser(userId);
+
+      if (user == false) {
+        return false;
+      } else {
+        return user;
+      }
+    }
+  } catch (error) {
+    console.log("Error fetching current user: ", error);
+  }
+};
+
+export { disconnect, getConnect, getCurrentUser };

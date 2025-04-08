@@ -1,6 +1,10 @@
 import { Router } from "express";
 import { getStats, getStatus } from "../controllers/AppController";
-import getConnect from "../controllers/AuthController";
+import {
+  disconnect,
+  getConnect,
+  getCurrentUser,
+} from "../controllers/AuthController";
 import postNew from "../controllers/UsersController";
 
 const router = Router();
@@ -73,9 +77,45 @@ router.get("/connect", async (req, res) => {
 });
 
 // Disconnect route
-router.get("/disconnect", (req, res) => {});
+router.get("/disconnect", async (req, res) => {
+  try {
+    const token = req.headers["x-token"];
+
+    if (token) {
+      const deleteSession = await disconnect(token);
+
+      if (deleteSession) {
+        return res.status(204).send("");
+      } else {
+        return res.status(401).json({ Error: "Unauthorized" });
+      }
+    }
+  } catch (error) {
+    console.log("Error disconnecting: ", error);
+  }
+});
 
 // Get user route
-router.get("/users/me", (req, res) => {});
+router.get("/users/me", async (req, res) => {
+  try {
+    const token = req.headers["x-token"];
+
+    if (token) {
+      const user = await getCurrentUser(token);
+
+      if (user == false) {
+        return res.status(401).json({ Error: "Unauthorized" });
+      } else {
+        const { email, _id } = user;
+        const userObj = { id: _id, email: email };
+        res.status(201).json(userObj);
+      }
+    } else {
+      return res.status(401).json({ Error: "Unauthorized" });
+    }
+  } catch (error) {
+    console.log("Error getting current user details: ", error);
+  }
+});
 
 export default router;
