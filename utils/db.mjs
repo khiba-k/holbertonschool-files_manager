@@ -1,3 +1,4 @@
+import { createHash } from "crypto";
 import pkg from "mongodb";
 
 const { MongoClient } = pkg;
@@ -38,7 +39,44 @@ class DBClient {
 
   async checkEmail(email) {
     if (!this.db) return 0;
-    return await this.db.users.countDocuments({ email: email });
+    return await this.db.collection("users").countDocuments({ email: email });
+  }
+
+  async createUser(email, password) {
+    try {
+      const user = { email: email, password: password };
+      const newUser = await this.db.collection("users").insertOne(user);
+      return newUser.insertedId;
+    } catch (error) {
+      console.log("Error creating new user: ", error);
+    }
+  }
+
+  async checkUser(email, password) {
+    try {
+      const user = await this.db.collection("users").findOne({ email: email });
+
+      if (user) {
+        const userPassword = user["password"];
+
+        // Check if entered password matches user password
+        const hashedPassword = createHash("sha1")
+          .update(password)
+          .digest("hex");
+
+        if (hashedPassword == userPassword) {
+          return user.insertedId;
+        } else {
+          console.log("Incorrect password");
+          return false;
+        }
+      } else {
+        console.log("Email does not exist");
+        return false;
+      }
+    } catch (error) {
+      console.log("Error checking user: ", error);
+    }
   }
 }
 

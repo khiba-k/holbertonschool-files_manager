@@ -1,5 +1,7 @@
 import { Router } from "express";
 import { getStats, getStatus } from "../controllers/AppController";
+import getConnect from "../controllers/AuthController";
+import postNew from "../controllers/UsersController";
 
 const router = Router();
 
@@ -16,29 +18,64 @@ router.get("/stats", async (req, res) => {
 });
 
 // Create new user route
-router.post("users", (req, res) => {
+router.post("/users", async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    // Check for email
     if (!email) {
-      res.status(400).json({ Error: "Missing email" });
       console.log("Missing email");
+      return res.status(400).json({ Error: "Missing email" });
     }
 
+    // Check for password
     if (!password) {
-      res.status(400).json({ Error: "Missing password" });
       console.log("Missing password");
+      return res.status(400).json({ Error: "Missing password" });
     }
 
-    const post = postNew(email, password);
+    // Post New User
+    const postedUser = await postNew(email, password);
 
-    if (!post) {
-      res.status(400).json({ Error: "Already Exists" });
+    if (postedUser == false) {
       console.log("Email already exists");
+      return res.status(400).json({ Error: "Already Exists" });
+    } else {
+      console.log("User created successfully");
+      return res.status(201).json(postedUser);
     }
   } catch (error) {
-    console.log("An error occured: ", error);
+    console.log("An error occured when posting user: ", error);
   }
 });
+
+// Get connect route
+router.get("/connect", async (req, res) => {
+  try {
+    // Get email and password key:value pair
+    const { authorization } = req.headers;
+
+    if (authorization) {
+      const emailPassPair = authorization.split(" ")[1];
+
+      const isUserConnected = await getConnect(emailPassPair);
+      if (isUserConnected == false) {
+        return res.status(401).json({ Error: "Unauthorized" });
+      } else {
+        return res.status(200).json({ token: isUserConnected });
+      }
+    } else {
+      console.log("authorization Header is missing or incorrect.");
+    }
+  } catch (error) {
+    console.log("An error occured while logging in: ", error);
+  }
+});
+
+// Disconnect route
+router.get("/disconnect", (req, res) => {});
+
+// Get user route
+router.get("/users/me", (req, res) => {});
 
 export default router;
