@@ -108,7 +108,7 @@ router.get("/users/me", async (req, res) => {
       } else {
         const { email, _id } = user;
         const userObj = { id: _id, email: email };
-        res.status(201).json(userObj);
+        res.json(userObj);
       }
     } else {
       return res.status(401).json({ error: "Unauthorized" });
