@@ -64,7 +64,7 @@ router.get("/connect", async (req, res) => {
 
       const isUserConnected = await getConnect(emailPassPair);
       if (isUserConnected == false) {
-        return res.status(401).json({ Error: "Unauthorized" });
+        return res.status(401).json({ error: "Unauthorized" });
       } else {
         return res.status(200).json({ token: isUserConnected });
       }
@@ -87,7 +87,7 @@ router.get("/disconnect", async (req, res) => {
       if (deleteSession) {
         return res.status(204).send("");
       } else {
-        return res.status(401).json({ Error: "Unauthorized" });
+        return res.status(401).json({ error: "Unauthorized" });
       }
     }
   } catch (error) {
@@ -104,14 +104,14 @@ router.get("/users/me", async (req, res) => {
       const user = await getCurrentUser(token);
 
       if (user == false) {
-        return res.status(401).json({ Error: "Unauthorized" });
+        return res.status(401).json({ error: "Unauthorized" });
       } else {
         const { email, _id } = user;
         const userObj = { id: _id, email: email };
         res.status(201).json(userObj);
       }
     } else {
-      return res.status(401).json({ Error: "Unauthorized" });
+      return res.status(401).json({ error: "Unauthorized" });
     }
   } catch (error) {
     console.log("Error getting current user details: ", error);
