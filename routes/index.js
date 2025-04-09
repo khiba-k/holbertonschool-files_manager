@@ -5,6 +5,7 @@ import {
   getConnect,
   getCurrentUser,
 } from "../controllers/AuthController";
+import postUpload from "../controllers/FilesController";
 import postNew from "../controllers/UsersController";
 
 const router = Router();
@@ -115,6 +116,64 @@ router.get("/users/me", async (req, res) => {
     }
   } catch (error) {
     console.log("Error getting current user details: ", error);
+  }
+});
+
+// Post new file route
+router.post("/files", async (req, res) => {
+  try {
+    const token = req.headers["x-token"];
+    const { name, type, parentId, data, isPublic } = req.body;
+
+    // Check existence of token
+    if (!token) {
+      return res.status(401).json({ error: "Unauthorized" });
+    } else {
+      // Check existence of name
+      if (!name) {
+        return res.status(400).json({ error: "Missing name" });
+      }
+      // Check existence of file type
+      if (!type || (type == "folder" && type == "file" && type == "image")) {
+        return res.status(400).json({ error: "Missing type" });
+      }
+      // Check existence of data
+      if (!data && type != "folder") {
+        return res.status(400).json({ error: "Missing data" });
+      }
+
+      // Try saving file
+      const uploadData = await postUpload(
+        token,
+        name,
+        type,
+        parentId,
+        data,
+        isPublic
+      );
+
+      // If saving file fails
+      if (uploadData.success == false) {
+        if (uploadData.message == "User not found") {
+          return res.status(400).json({ error: "Unauthorized" });
+        } else if (uploadData.message == "Parent file not found") {
+          return res.status(400).json({ error: "Parent not found" });
+        } else if (uploadData.message == "Parent is not folder") {
+          return res.status(400).json({ error: "Parent is not folder" });
+        } else if (uploadData.message == "User does not have access to file") {
+          return res
+            .status(401)
+            .json({ error: "User does not have access to file" });
+        }
+      }
+
+      if (uploadData.success) {
+        return res.status(201).json(uploadData.data);
+      }
+    }
+  } catch (error) {
+    console.log("Error posting file", error);
+    return res.status(500).send("A server side error occured");
   }
 });
 

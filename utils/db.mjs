@@ -95,6 +95,42 @@ class DBClient {
       console.log("Error getting user: ", error);
     }
   }
+
+  async checkFileId(fileId) {
+    try {
+      const file = await this.db
+        .collection("files")
+        .findOne({ _id: new ObjectId(fileId) });
+      return file;
+    } catch (error) {
+      console.log("Error checking for file with parentId: ", error);
+    }
+  }
+
+  async saveFile(userId, name, type, isPublic, parentId) {
+    try {
+      const folder = await this.db.collection("files").insertOne({
+        userId: userId,
+        name: name,
+        type: type,
+        isPublic: isPublic,
+        parentId: parentId,
+      });
+
+      const folderObj = {
+        id: folder.insertedId,
+        userId: userId,
+        name: name,
+        type: type,
+        isPublic: isPublic,
+        parentId: parentId,
+      };
+
+      return folderObj;
+    } catch (error) {
+      console.log("Error saving file to database", error);
+    }
+  }
 }
 
 const dbClient = new DBClient();

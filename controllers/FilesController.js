@@ -50,6 +50,8 @@ const postUpload = async (
         );
 
         return { success: true, data: folder };
+      } else {
+        folder = process.env.FOLDER_PATH || "/tmp/files_manager";
       }
     }
   } catch (error) {
