@@ -155,7 +155,7 @@ router.post("/files", async (req, res) => {
       // If saving file fails
       if (uploadData.success == false) {
         if (uploadData.message == "User not found") {
-          return res.status(400).json({ error: "Unauthorized" });
+          return res.status(401).json({ error: "Unauthorized" });
         } else if (uploadData.message == "Parent file not found") {
           return res.status(400).json({ error: "Parent not found" });
         } else if (uploadData.message == "Parent is not folder") {
