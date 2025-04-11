@@ -143,6 +143,50 @@ class DBClient {
       console.log("Error saving file to database", error);
     }
   }
+
+  async getFile(fileId) {
+    try {
+      const file = await this.db
+        .collection("files")
+        .findOne({ _id: new ObjectId(fileId) });
+
+      if (file) {
+        return { success: true, data: file };
+      } else {
+        return { success: false };
+      }
+    } catch (error) {
+      console.log("An error occured while gerring file from db");
+      throw error;
+    }
+  }
+
+  async getFiles(parentId, page) {
+    try {
+      const skip = page * 20;
+      const limit = 20;
+
+      const pipeline = [];
+
+      //If !parentId, filter by specific id
+      if (parentId != 0) {
+        pipeline.push({ $match: { parentId } });
+      }
+
+      // Add skip and limit to pipeline
+      pipeline.push({ $skip: skip }, { $limit: limit });
+
+      const files = await this.db
+        .collection("files")
+        .aggregate(pipeline)
+        .toArray();
+
+      return { success: true, data: files };
+    } catch (error) {
+      console.log("An error occured while gerring file from db");
+      throw error;
+    }
+  }
 }
 
 const dbClient = new DBClient();

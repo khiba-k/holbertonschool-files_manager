@@ -1,14 +1,14 @@
-import { v4 as uuidv4 } from "uuid";
-import dbClient from "../utils/db.mjs";
-import redisClient from "../utils/redis.mjs";
+import { v4 as uuidv4 } from 'uuid';
+import dbClient from '../utils/db.mjs';
+import redisClient from '../utils/redis.mjs';
 
 const getConnect = async (emailPassPair) => {
   try {
     // Decode key value pair
-    const decodedString = Buffer.from(emailPassPair, "base64").toString(
-      "utf-8"
+    const decodedString = Buffer.from(emailPassPair, 'base64').toString(
+      'utf-8',
     );
-    const emailPassArr = decodedString.split(":");
+    const emailPassArr = decodedString.split(':');
     const email = emailPassArr[0];
     const password = emailPassArr[1];
 
@@ -17,19 +17,18 @@ const getConnect = async (emailPassPair) => {
 
     if (userExists == false) {
       return false;
-    } else {
-      // Create token for user
-      const userToken = uuidv4();
-
-      //   Create session and store in redis
-      const userId = String(userExists);
-      const sessionKey = `auth_${userToken}`;
-      await redisClient.set(sessionKey, userId, 86400);
-
-      return userToken;
     }
+    // Create token for user
+    const userToken = uuidv4();
+
+    //   Create session and store in redis
+    const userId = String(userExists);
+    const sessionKey = `auth_${userToken}`;
+    await redisClient.set(sessionKey, userId, 86400);
+
+    return userToken;
   } catch (error) {
-    console.log("Error getting token: ", error);
+    console.log('Error getting token: ', error);
   }
 };
 
@@ -39,15 +38,14 @@ const disconnect = async (token) => {
     const userId = await redisClient.get(key);
 
     if (userId == null) {
-      console.log("Token does not exist");
+      console.log('Token does not exist');
       return false;
-    } else {
-      // If token exists delete the key value pair
-      await redisClient.del(key);
-      return true;
     }
+    // If token exists delete the key value pair
+    await redisClient.del(key);
+    return true;
   } catch (error) {
-    console.log("Error deleting session: ", error);
+    console.log('Error deleting session: ', error);
   }
 };
 
@@ -57,19 +55,17 @@ const getCurrentUser = async (token) => {
     const userId = await redisClient.get(key);
 
     if (userId == null) {
-      console.log("Token does not exist");
+      console.log('Token does not exist');
       return false;
-    } else {
-      const user = await dbClient.getUser(userId);
-
-      if (user == false) {
-        return false;
-      } else {
-        return user;
-      }
     }
+    const user = await dbClient.getUser(userId);
+
+    if (user == false) {
+      return false;
+    }
+    return user;
   } catch (error) {
-    console.log("Error fetching current user: ", error);
+    console.log('Error fetching current user: ', error);
   }
 };
 

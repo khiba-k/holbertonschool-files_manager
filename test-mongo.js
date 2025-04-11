@@ -1,4 +1,4 @@
-import dbClient from "./utils/db.mjs";
+import dbClient from './utils/db.mjs';
 
 const testMongo = async () => {
   const isConnected = await dbClient.isAlive();

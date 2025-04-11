@@ -1,5 +1,5 @@
-import { createHash } from "crypto";
-import dbClient from "../utils/db.mjs";
+import { createHash } from 'crypto';
+import dbClient from '../utils/db.mjs';
 
 const postNew = async (email, password) => {
   try {
@@ -7,14 +7,13 @@ const postNew = async (email, password) => {
 
     if (emailExists >= 1) {
       return false;
-    } else {
-      const hashedPass = createHash("sha1").update(password).digest("hex");
-      const userId = await dbClient.createUser(email, hashedPass);
-
-      return { id: userId, email: email };
     }
+    const hashedPass = createHash('sha1').update(password).digest('hex');
+    const userId = await dbClient.createUser(email, hashedPass);
+
+    return { id: userId, email };
   } catch (error) {
-    console.log("An error occured while posting new user: ", error);
+    console.log('An error occured while posting new user: ', error);
   }
 };
 

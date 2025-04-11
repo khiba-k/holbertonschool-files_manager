@@ -1,5 +1,5 @@
-import dbClient from "../utils/db.mjs";
-import redisClient from "../utils/redis.mjs";
+import dbClient from '../utils/db.mjs';
+import redisClient from '../utils/redis.mjs';
 
 const getStatus = async () => {
   const redisConnect = redisClient.isAlive();
@@ -14,7 +14,7 @@ const getStats = async () => {
   const users = await dbClient.nbUsers();
   const files = await dbClient.nbFiles();
 
-  return { users: users, files: files };
+  return { users, files };
 };
 
 export { getStats, getStatus };
