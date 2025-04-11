@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
-import dbClient from '../utils/db.mjs';
-import redisClient from '../utils/redis.mjs';
+import dbClient from '../utils/db';
+import redisClient from '../utils/redis';
 
 const getConnect = async (emailPassPair) => {
   try {
@@ -15,7 +15,7 @@ const getConnect = async (emailPassPair) => {
     // Check if user exists
     const userExists = await dbClient.checkUser(email, password);
 
-    if (userExists == false) {
+    if (userExists === false) {
       return false;
     }
     // Create token for user
@@ -37,7 +37,7 @@ const disconnect = async (token) => {
     const key = `auth_${token}`;
     const userId = await redisClient.get(key);
 
-    if (userId == null) {
+    if (userId === null) {
       console.log('Token does not exist');
       return false;
     }
@@ -54,13 +54,13 @@ const getCurrentUser = async (token) => {
     const key = `auth_${token}`;
     const userId = await redisClient.get(key);
 
-    if (userId == null) {
+    if (userId === null) {
       console.log('Token does not exist');
       return false;
     }
     const user = await dbClient.getUser(userId);
 
-    if (user == false) {
+    if (user === false) {
       return false;
     }
     return user;

@@ -1,5 +1,5 @@
 import { createHash } from 'crypto';
-import dbClient from '../utils/db.mjs';
+import dbClient from '../utils/db';
 
 const postNew = async (email, password) => {
   try {

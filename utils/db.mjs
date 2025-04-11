@@ -64,7 +64,7 @@ class DBClient {
           .update(password)
           .digest("hex");
 
-        if (hashedPassword == userPassword) {
+        if (hashedPassword === userPassword) {
           return user["_id"];
         } else {
           console.log("Incorrect password");
@@ -111,7 +111,7 @@ class DBClient {
     try {
       let folder;
 
-      if (localPath == null) {
+      if (localPath === null) {
         folder = await this.db.collection("files").insertOne({
           userId: userId,
           name: name,
@@ -169,7 +169,7 @@ class DBClient {
       const pipeline = [];
 
       //If !parentId, filter by specific id
-      if (parentId != 0) {
+      if (parentId !== 0) {
         pipeline.push({ $match: { parentId } });
       }
 

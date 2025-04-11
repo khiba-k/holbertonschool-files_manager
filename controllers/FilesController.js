@@ -22,10 +22,10 @@ const postUpload = async (
     const key = `auth_${token}`;
     const userId = await redisClient.get(key);
 
-    if (userId == null) {
+    if (userId === null) {
       return { success: false, message: 'User not found' };
     }
-    if (parentId != 0) {
+    if (parentId !== 0) {
       // Check if file with parent id exists
       const parent = await dbClient.checkFileId(parentId);
 
@@ -35,10 +35,10 @@ const postUpload = async (
       const parentType = parent.type;
       const fileUserId = parent.userId;
 
-      if (parentType != 'folder') {
+      if (parentType !== 'folder') {
         return { success: false, message: 'Parent is not folder' };
       }
-      if (fileUserId != userId) {
+      if (fileUserId !== userId) {
         return {
           success: false,
           message: 'User does not have access to file',
@@ -47,7 +47,7 @@ const postUpload = async (
     }
 
     //   Save to db
-    if (type == 'folder') {
+    if (type === 'folder') {
       const folder = await dbClient.saveFile(
         userId,
         name,

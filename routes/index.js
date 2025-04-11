@@ -42,7 +42,7 @@ router.post('/users', async (req, res) => {
     // Post New User
     const postedUser = await postNew(email, password);
 
-    if (postedUser == false) {
+    if (postedUser === false) {
       console.log('Email already exists');
       return res.status(400).json({ Error: 'Already Exists' });
     }
@@ -63,7 +63,7 @@ router.get('/connect', async (req, res) => {
       const emailPassPair = authorization.split(' ')[1];
 
       const isUserConnected = await getConnect(emailPassPair);
-      if (isUserConnected == false) {
+      if (isUserConnected === false) {
         return res.status(401).json({ error: 'Unauthorized' });
       }
       return res.status(200).json({ token: isUserConnected });
@@ -100,7 +100,7 @@ router.get('/users/me', async (req, res) => {
     if (token) {
       const user = await getCurrentUser(token);
 
-      if (user == false) {
+      if (user === false) {
         return res.status(401).json({ error: 'Unauthorized' });
       }
       const { email, _id } = user;
@@ -131,11 +131,11 @@ router.post('/files', async (req, res) => {
       return res.status(400).json({ error: 'Missing name' });
     }
     // Check existence of file type
-    if (!type || (type == 'folder' && type == 'file' && type == 'image')) {
+    if (!type || (type === 'folder' && type === 'file' && type === 'image')) {
       return res.status(400).json({ error: 'Missing type' });
     }
     // Check existence of data
-    if (!data && type != 'folder') {
+    if (!data && type !== 'folder') {
       return res.status(400).json({ error: 'Missing data' });
     }
 
@@ -150,18 +150,22 @@ router.post('/files', async (req, res) => {
     );
 
     // If saving file fails
-    if (uploadData.success == false) {
-      if (uploadData.message == 'User not found') {
+    if (uploadData.success === false) {
+      if (uploadData.message === 'User not found') {
         return res.status(401).json({ error: 'Unauthorized' });
-      } if (uploadData.message == 'Parent file not found') {
+      }
+      if (uploadData.message === 'Parent file not found') {
         return res.status(400).json({ error: 'Parent not found' });
-      } if (uploadData.message == 'Parent is not folder') {
+      }
+      if (uploadData.message === 'Parent is not folder') {
         return res.status(400).json({ error: 'Parent is not folder' });
-      } if (uploadData.message == 'User does not have access to file') {
+      }
+      if (uploadData.message === 'User does not have access to file') {
         return res
           .status(401)
           .json({ error: 'User does not have access to file' });
-      } if (uploadData.message == 'Error creating storage directory') {
+      }
+      if (uploadData.message === 'Error creating storage directory') {
         return res.status(401).json({ error: 'Error creating directory' });
       }
     }
@@ -191,10 +195,10 @@ router.get('/files/:id', async (req, res) => {
 
     // If failed to get files
     if (!file.success) {
-      if (file.message == 'User not authorized') {
+      if (file.message === 'User not authorized') {
         return res.status(401).json({ error: 'Unauthorized' });
       }
-      if (file.message == 'File not found') {
+      if (file.message === 'File not found') {
         return res.status(404).json({ error: 'Not found' });
       }
     } else {
