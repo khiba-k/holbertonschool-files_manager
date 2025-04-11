@@ -107,16 +107,28 @@ class DBClient {
     }
   }
 
-  async saveFile(userId, name, type, isPublic, parentId) {
+  async saveFile(userId, name, type, isPublic, parentId, localPath = null) {
     try {
-      const folder = await this.db.collection("files").insertOne({
-        userId: userId,
-        name: name,
-        type: type,
-        isPublic: isPublic,
-        parentId: parentId,
-      });
+      let folder;
 
+      if (localPath == null) {
+        folder = await this.db.collection("files").insertOne({
+          userId: userId,
+          name: name,
+          type: type,
+          isPublic: isPublic,
+          parentId: parentId,
+        });
+      } else {
+        folder = await this.db.collection("files").insertOne({
+          userId: userId,
+          name: name,
+          type: type,
+          isPublic: isPublic,
+          parentId: parentId,
+          localPath: localPath,
+        });
+      }
       const folderObj = {
         id: folder.insertedId,
         userId: userId,

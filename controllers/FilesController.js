@@ -1,5 +1,12 @@
+import fs from "fs";
+import path from "path";
+import { promisify } from "util";
+import { v4 as uuidv4 } from "uuid";
 import dbClient from "../utils/db.mjs";
 import redisClient from "../utils/redis.mjs";
+
+const mkdir = promisify(fs.mkdir);
+const writeFile = promisify(fs.writeFile);
 
 const postUpload = async (
   token,
@@ -51,7 +58,46 @@ const postUpload = async (
 
         return { success: true, data: folder };
       } else {
-        folder = process.env.FOLDER_PATH || "/tmp/files_manager";
+        // Handle file or image types
+        // Create the folder path if it doesn't exist
+        const folderPath = process.env.FOLDER_PATH || "/tmp/files_manager";
+
+        try {
+          await mkdir(folderPath, { recursive: true });
+        } catch (err) {
+          if (err.code !== "EEXIST") {
+            console.error(`Error creating directory: ${err}`);
+            return {
+              success: false,
+              message: "Error creating storage directory",
+            };
+          }
+        }
+
+        // Generate a unique filename using UUID
+        const filename = uuidv4();
+        const localPath = path.join(folderPath, filename);
+
+        // Decode and save the file
+        if (data) {
+          const fileData = Buffer.from(data, "base64");
+          await writeFile(localPath, fileData);
+        } else {
+          // Create an empty file if no data provided
+          await writeFile(localPath, "");
+        }
+
+        // Save file info to database
+        const file = await dbClient.saveFile(
+          userId,
+          name,
+          type,
+          isPublic,
+          parentId,
+          localPath
+        );
+
+        return { success: true, data: file };
       }
     }
   } catch (error) {

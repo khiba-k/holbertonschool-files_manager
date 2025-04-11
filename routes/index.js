@@ -164,6 +164,8 @@ router.post("/files", async (req, res) => {
           return res
             .status(401)
             .json({ error: "User does not have access to file" });
+        } else if (uploadData.message == "Error creating storage directory") {
+          return res.status(401).json({ error: "Error creating directory" });
         }
       }
 
