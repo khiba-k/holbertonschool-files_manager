@@ -131,7 +131,7 @@ class DBClient {
         });
       }
       const folderObj = {
-        id: folder.insertedId,
+        id: folder.insertedId.toString(),
         userId: userId,
         name: name,
         type: type,
