@@ -135,7 +135,7 @@ const getIndex = async (token, parentId = 0, page = 0) => {
     if (!userId) {
       return { success: false, message: "User not authorized" };
     }
-    const files = await dbClient.getFiles(parentId, page);
+    const files = await dbClient.getFiles(parentId, page, userId);
 
     return { success: true, data: files.data };
   } catch (error) {

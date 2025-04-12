@@ -170,7 +170,7 @@ class DBClient {
     }
   }
 
-  async getFiles(parentId, page) {
+  async getFiles(parentId, page, userId) {
     try {
       const skip = page * 20;
       const limit = 20;
@@ -179,8 +179,11 @@ class DBClient {
 
       //If !parentId, filter by specific id
       if (parentId !== 0) {
-        pipeline.push({ $match: { parentId } });
+        pipeline.push({ $match: { parentId: parentId } });
       }
+
+      // Match with userId
+      pipeline.push({ $match: { userId: userId } });
 
       // Add skip and limit to pipeline
       pipeline.push({ $skip: skip }, { $limit: limit });
