@@ -100,6 +100,7 @@ const postUpload = async (
     return { success: true, data: file };
   } catch (error) {
     console.log("Error posting upload: ", error);
+    throw error;
   }
 };
 

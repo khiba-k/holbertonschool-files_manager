@@ -104,6 +104,7 @@ class DBClient {
       return file;
     } catch (error) {
       console.log("Error checking for file with parentId: ", error);
+      throw error;
     }
   }
 

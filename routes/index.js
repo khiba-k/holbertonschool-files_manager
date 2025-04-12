@@ -156,7 +156,7 @@ router.post("/files", async (req, res) => {
         return res.status(400).json({ error: "Parent not found" });
       }
       if (uploadData.message === "Parent is not folder") {
-        return res.status(400).json({ error: "Parent is not folder" });
+        return res.status(400).json({ error: "Parent is not a folder" });
       }
       if (uploadData.message === "User does not have access to file") {
         return res
