@@ -1,9 +1,9 @@
-import fs from 'fs';
-import path from 'path';
-import { promisify } from 'util';
-import { v4 as uuidv4 } from 'uuid';
-import dbClient from '../utils/db.mjs';
-import redisClient from '../utils/redis.mjs';
+import fs from "fs";
+import path from "path";
+import { promisify } from "util";
+import { v4 as uuidv4 } from "uuid";
+import dbClient from "../utils/db.mjs";
+import redisClient from "../utils/redis.mjs";
 
 const mkdir = promisify(fs.mkdir);
 const writeFile = promisify(fs.writeFile);
@@ -15,61 +15,61 @@ const postUpload = async (
   type,
   parentId = 0,
   data = null,
-  isPublic = false,
+  isPublic = false
 ) => {
   try {
     // Get user by token
     const key = `auth_${token}`;
     const userId = await redisClient.get(key);
 
-    if (userId === null) {
-      return { success: false, message: 'User not found' };
+    if (!userId) {
+      return { success: false, message: "User not found" };
     }
     if (parentId !== 0) {
       // Check if file with parent id exists
       const parent = await dbClient.checkFileId(parentId);
 
       if (!parent) {
-        return { success: false, message: 'Parent file not found' };
+        return { success: false, message: "Parent file not found" };
       }
       const parentType = parent.type;
       const fileUserId = parent.userId;
 
-      if (parentType !== 'folder') {
-        return { success: false, message: 'Parent is not folder' };
+      if (parentType !== "folder") {
+        return { success: false, message: "Parent is not folder" };
       }
       if (fileUserId !== userId) {
         return {
           success: false,
-          message: 'User does not have access to file',
+          message: "User does not have access to file",
         };
       }
     }
 
     //   Save to db
-    if (type === 'folder') {
+    if (type === "folder") {
       const folder = await dbClient.saveFile(
         userId,
         name,
         type,
         isPublic,
-        parentId,
+        parentId
       );
 
       return { success: true, data: folder };
     }
     // Handle file or image types
     // Create the folder path if it doesn't exist
-    const folderPath = process.env.FOLDER_PATH || '/tmp/files_manager';
+    const folderPath = process.env.FOLDER_PATH || "/tmp/files_manager";
 
     try {
       await mkdir(folderPath, { recursive: true });
     } catch (err) {
-      if (err.code !== 'EEXIST') {
+      if (err.code !== "EEXIST") {
         console.error(`Error creating directory: ${err}`);
         return {
           success: false,
-          message: 'Error creating storage directory',
+          message: "Error creating storage directory",
         };
       }
     }
@@ -80,11 +80,11 @@ const postUpload = async (
 
     // Decode and save the file
     if (data) {
-      const fileData = Buffer.from(data, 'base64');
+      const fileData = Buffer.from(data, "base64");
       await writeFile(localPath, fileData);
     } else {
       // Create an empty file if no data provided
-      await writeFile(localPath, '');
+      await writeFile(localPath, "");
     }
 
     // Save file info to database
@@ -94,12 +94,12 @@ const postUpload = async (
       type,
       isPublic,
       parentId,
-      localPath,
+      localPath
     );
 
     return { success: true, data: file };
   } catch (error) {
-    console.log('Error posting upload: ', error);
+    console.log("Error posting upload: ", error);
   }
 };
 
@@ -111,16 +111,16 @@ const getShow = async (token, fileId) => {
 
     // If auth_token key does not exist
     if (!userId) {
-      return { success: false, message: 'User not authorized' };
+      return { success: false, message: "User not authorized" };
     }
     const file = await dbClient.getFile(fileId);
 
     if (file.success) {
       return { success: true, data: file.data };
     }
-    return { success: false, message: 'File not found' };
+    return { success: false, message: "File not found" };
   } catch (error) {
-    console.log('Error getting file: ', error);
+    console.log("Error getting file: ", error);
     throw error;
   }
 };
@@ -132,13 +132,13 @@ const getIndex = async (token, parentId = 0, page = 0) => {
     const userId = await redisClient.get(key);
 
     if (!userId) {
-      return { success: false, message: 'User not authorized' };
+      return { success: false, message: "User not authorized" };
     }
     const files = await dbClient.getFiles(parentId, page);
 
     return { success: true, data: files.data };
   } catch (error) {
-    console.log('Error getting files: ', error);
+    console.log("Error getting files: ", error);
     throw error;
   }
 };

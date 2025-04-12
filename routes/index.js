@@ -122,14 +122,14 @@ router.post("/files", async (req, res) => {
 
     // Check existence of token
     if (!token) {
-      return res.status(401).json({ error: "Unauthorized" });
+      return res.status(400).json({ error: "Missing token" });
     }
     // Check existence of name
     if (!name) {
       return res.status(400).json({ error: "Missing name" });
     }
     // Check existence of file type
-    if (!type || (type === "folder" && type === "file" && type === "image")) {
+    if (!type || !["folder", "file", "image"].includes(type)) {
       return res.status(400).json({ error: "Missing type" });
     }
     // Check existence of data
