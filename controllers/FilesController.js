@@ -144,4 +144,27 @@ const getIndex = async (token, parentId = 0, page = 0) => {
   }
 };
 
-export { getIndex, getShow, postUpload };
+//Publish controller
+const putPublish = async (token, fileId) => {
+  try {
+    const key = `auth_${token}`;
+    const userId = await redisClient.get(key);
+
+    if (!userId) {
+      return { success: false, message: "UserId not found" };
+    }
+
+    // Check if file exists
+    const fileExists = await checkFileId(fileId);
+
+    if (!fileExists) {
+      return { success: false, message: "File does not exist" };
+    } else {
+    }
+  } catch (error) {
+    console.log("Error publishing");
+    throw error;
+  }
+};
+
+export { getIndex, getShow, postUpload, putPublish };

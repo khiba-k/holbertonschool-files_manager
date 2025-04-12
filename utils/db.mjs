@@ -199,6 +199,23 @@ class DBClient {
       throw error;
     }
   }
+
+  async publishFile(fileId) {
+    try {
+      const updatedDoc = await this.db
+        .collection("users")
+        .findOneAndUpdate(
+          { _id: new ObjectId(fileId) },
+          { $set: { isPublished: true } },
+          { returnDocument: "after" }
+        );
+
+      return updatedDoc;
+    } catch (error) {
+      console.log("Error publishing file");
+      throw error;
+    }
+  }
 }
 
 const dbClient = new DBClient();
