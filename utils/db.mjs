@@ -145,11 +145,11 @@ class DBClient {
     }
   }
 
-  async getFile(fileId) {
+  async getFile(fileId, userId) {
     try {
       const file = await this.db
         .collection("files")
-        .findOne({ _id: new ObjectId(fileId) });
+        .findOne({ _id: new ObjectId(fileId), userId: userId });
 
       if (file) {
         return { success: true, data: file };

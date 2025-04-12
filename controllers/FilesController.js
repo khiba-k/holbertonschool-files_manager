@@ -114,7 +114,7 @@ const getShow = async (token, fileId) => {
     if (!userId) {
       return { success: false, message: "User not authorized" };
     }
-    const file = await dbClient.getFile(fileId);
+    const file = await dbClient.getFile(fileId, userId);
 
     if (file.success) {
       return { success: true, data: file.data };
