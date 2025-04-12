@@ -152,7 +152,15 @@ class DBClient {
         .findOne({ _id: new ObjectId(fileId), userId: userId });
 
       if (file) {
-        return { success: true, data: file };
+        const fileData = {
+          id: file._id.toString(),
+          userId: file.userId,
+          name: file.name,
+          type: file.type,
+          isPublic: file.isPublic,
+          parentId: file.parentId,
+        };
+        return { success: true, data: fileData };
       } else {
         return { success: false };
       }

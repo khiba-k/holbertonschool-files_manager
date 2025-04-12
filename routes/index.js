@@ -200,7 +200,7 @@ router.get("/files/:id", async (req, res) => {
         return res.status(404).json({ error: "Not found" });
       }
     } else {
-      return res.status(201).json(file.data);
+      return res.status(200).json(file.data);
     }
   } catch (error) {
     console.log("An error occured while getting file", error);
