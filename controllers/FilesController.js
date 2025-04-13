@@ -144,27 +144,91 @@ const getIndex = async (token, parentId = 0, page = 0) => {
   }
 };
 
-//Publish controller
-const putPublish = async (token, fileId) => {
+const putPublish = async (req, res) => {
+  const token = req.header("X-Token");
+  if (!token) return res.status(401).json({ error: "Unauthorized" });
+
   try {
     const key = `auth_${token}`;
     const userId = await redisClient.get(key);
 
     if (!userId) {
-      return { success: false, message: "UserId not found" };
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    // Check if file exists
-    const fileExists = await checkFileId(fileId);
+    // Check if file exists and belongs to the user
+    const fileId = req.params.id;
+    const file = await checkFileId(fileId);
 
-    if (!fileExists) {
-      return { success: false, message: "File does not exist" };
-    } else {
+    if (!file) {
+      return res.status(404).json({ error: "Not found" });
     }
+
+    // Verify the file belongs to this user
+    if (file.userId.toString() !== userId) {
+      return res.status(404).json({ error: "Not found" });
+    }
+
+    // Update the file to be published
+    const updatedFile = await dbClient.publishFile(fileId);
+
+    return res.status(200).json({
+      id: updatedFile._id.toString(),
+      userId: updatedFile.userId.toString(),
+      name: updatedFile.name,
+      type: updatedFile.type,
+      isPublic: updatedFile.isPublished, // Map isPublished to isPublic in response
+      parentId: updatedFile.parentId ? updatedFile.parentId.toString() : "0",
+    });
   } catch (error) {
-    console.log("Error publishing");
-    throw error;
+    console.error("Error in putPublish:", error);
+    return res.status(500).json({ error: "Server error" });
   }
 };
 
-export { getIndex, getShow, postUpload, putPublish };
+/**
+ * Controller for PUT /files/:id/unpublish endpoint
+ */
+const putUnpublish = async (req, res) => {
+  const token = req.header("X-Token");
+  if (!token) return res.status(401).json({ error: "Unauthorized" });
+
+  try {
+    const key = `auth_${token}`;
+    const userId = await redisClient.get(key);
+
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    // Check if file exists and belongs to the user
+    const fileId = req.params.id;
+    const file = await checkFileId(fileId);
+
+    if (!file) {
+      return res.status(404).json({ error: "Not found" });
+    }
+
+    // Verify the file belongs to this user
+    if (file.userId.toString() !== userId) {
+      return res.status(404).json({ error: "Not found" });
+    }
+
+    // Update the file to be unpublished
+    const updatedFile = await dbClient.unpublishFile(fileId);
+
+    return res.status(200).json({
+      id: updatedFile._id.toString(),
+      userId: updatedFile.userId.toString(),
+      name: updatedFile.name,
+      type: updatedFile.type,
+      isPublic: updatedFile.isPublished, // Map isPublished to isPublic in response
+      parentId: updatedFile.parentId ? updatedFile.parentId.toString() : "0",
+    });
+  } catch (error) {
+    console.error("Error in putUnpublish:", error);
+    return res.status(500).json({ error: "Server error" });
+  }
+};
+
+export { getIndex, getShow, postUpload, putPublish, putUnpublish };

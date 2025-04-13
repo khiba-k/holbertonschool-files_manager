@@ -203,7 +203,7 @@ class DBClient {
   async publishFile(fileId) {
     try {
       const updatedDoc = await this.db
-        .collection("users")
+        .collection("files") // Make sure this is the correct collection name
         .findOneAndUpdate(
           { _id: new ObjectId(fileId) },
           { $set: { isPublished: true } },
@@ -213,6 +213,23 @@ class DBClient {
       return updatedDoc;
     } catch (error) {
       console.log("Error publishing file");
+      throw error;
+    }
+  }
+
+  async unpublishFile(fileId) {
+    try {
+      const updatedDoc = await this.db
+        .collection("files") // Make sure this is the correct collection name
+        .findOneAndUpdate(
+          { _id: new ObjectId(fileId) },
+          { $set: { isPublished: false } },
+          { returnDocument: "after" }
+        );
+
+      return updatedDoc;
+    } catch (error) {
+      console.log("Error unpublishing file");
       throw error;
     }
   }

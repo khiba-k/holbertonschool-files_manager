@@ -10,6 +10,7 @@ import {
   getShow,
   postUpload,
   putPublish,
+  putUnpublish,
 } from "../controllers/FilesController";
 import postNew from "../controllers/UsersController";
 
@@ -245,48 +246,7 @@ router.get("/files", async (req, res) => {
   }
 });
 
-router.put("files/:id/publish", async (req, res) => {
-  try {
-    // Get file id & token
-    const { id } = req.params;
-    const token = req.headers["authorization"];
-
-    if (!token) {
-      return res.status(400).json({ error: "Missing authorization token" });
-    }
-
-    if (!id) {
-      return res.status(400).json({ error: "Missing file id" });
-    }
-
-    const publishFile = await putPublish(token, fileId);
-
-    if (!publishFile.success) {
-      if (publishFile.message === "UserId not found") {
-        return res.status(401).json({ error: "Unauthorized" });
-      }
-
-      if (publishFile.message === "File does not exist") {
-        return res.status(404).json({ error: "Not found" });
-      }
-    } else {
-    }
-  } catch (error) {
-    console.log("Error publishing files", error);
-    return res
-      .status(500)
-      .json({ success: false, message: "A server side error occured" });
-  }
-});
-
-// router.put("files/:id/unpublish", async (req, res) => {
-//   try {
-//   } catch (error) {
-//     console.log("Error publishing files", error);
-//     return res
-//       .status(500)
-//       .json({ success: false, message: "A server side error occured" });
-//   }
-// });
+router.put("/files/:id/publish", putPublish);
+router.put("/files/:id/unpublish", putUnpublish);
 
 export default router;
