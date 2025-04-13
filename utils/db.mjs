@@ -1,41 +1,55 @@
-import MongoClient from 'mongodb';
-import { env } from 'process';
+// utils/db.mjs (modified version with safer methods)
+import mongodb from 'mongodb';
 
-const DB_HOST = env.DB_HOST || 'localhost';
-const DB_PORT = env.DB_PORT || 27017;
-const DB_DATABASE = env.DB_DATABASE || 'files_manager';
-const URI = `mongodb://${DB_HOST}:${DB_PORT}/${DB_DATABASE}`;
+const { MongoClient } = mongodb;
+
+const DB_HOST = process.env.DB_HOST || 'localhost';
+const DB_PORT = process.env.DB_PORT || 27017;
+const DB_DATABASE = process.env.DB_DATABASE || 'files_manager';
+const url = `mongodb://${DB_HOST}:${DB_PORT}`;
 
 class DBClient {
   constructor() {
-    this.connection = false;
-    const connectOptions = {
-      useUnifiedTopology: true,
-    };
-
-    MongoClient.connect(URI, connectOptions, (error, client) => {
-      if (error) {
-        console.error(error.message);
+    MongoClient.connect(url, { useUnifiedTopology: true }, (error, client) => {
+      if (!error) {
+        this.db = client.db(DB_DATABASE);
+        this.users = this.db.collection('users');
+        this.files = this.db.collection('files');
+      } else {
+        console.log(error.message);
+        this.db = false;
       }
-      this.connection = true;
-      this.db = client.db();
-      this.users = this.db.collection('users');
-      this.files = this.db.collection('files');
     });
   }
 
   isAlive() {
-    return this.connection;
+    return !!this.db;
   }
 
   async nbUsers() {
-    const userCount = await this.users.countDocuments();
-    return userCount;
+    if (!this.isAlive() || !this.users) {
+      return 0;
+    }
+    try {
+      const userCount = await this.users.countDocuments();
+      return userCount;
+    } catch (error) {
+      console.error('Error counting users:', error.message);
+      return 0;
+    }
   }
 
   async nbFiles() {
-    const fileCount = await this.files.countDocuments();
-    return fileCount;
+    if (!this.isAlive() || !this.files) {
+      return 0;
+    }
+    try {
+      const fileCount = await this.files.countDocuments();
+      return fileCount;
+    } catch (error) {
+      console.error('Error counting files:', error.message);
+      return 0;
+    }
   }
 }
 

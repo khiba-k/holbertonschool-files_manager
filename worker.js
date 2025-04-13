@@ -2,24 +2,27 @@
 import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
 import path from 'path';
+import mime from 'mime-types';
 import { ObjectId } from 'mongodb';
+import Queue from 'bull';
 import redisClient from '../utils/redis';
 import dbClient from '../utils/db';
-import mime from 'mime-types';
-import Queue from 'bull';
+
+// Create a Bull queue for file processing
+const fileQueue = new Queue('fileQueue');
 
 class FilesController {
   /**
    * Uploads a new file or creates a new folder
-   *
+   * 
    * This endpoint handles the creation of three types of items:
    * 1. Folders - organizational units in the database
    * 2. Files - text or binary files stored on disk
    * 3. Images - specialized files specifically marked as images
-   *
+   * 
    * Files and images are stored both in the database (metadata)
    * and on disk (content), while folders exist only in the database.
-   *
+   * 
    * @param {Object} req - Express request object
    * @param {Object} res - Express response object
    * @returns {Object} - JSON response with new file data or error message
@@ -103,7 +106,7 @@ class FilesController {
     // For files and images, store the content on disk
     // Get the storage folder path
     const folderPath = process.env.FOLDER_PATH || '/tmp/files_manager';
-
+    
     // Create the storage folder if it doesn't exist
     try {
       if (!fs.existsSync(folderPath)) {
@@ -133,6 +136,14 @@ class FilesController {
     fileDocument.localPath = localPath;
     const result = await dbClient.db.collection('files').insertOne(fileDocument);
 
+    // For image files, add a job to the processing queue
+    if (type === 'image') {
+      fileQueue.add({
+        userId: userId.toString(),
+        fileId: result.insertedId.toString()
+      });
+    }
+
     // Return the new file information (without localPath)
     return res.status(201).json({
       id: result.insertedId.toString(),
@@ -146,11 +157,11 @@ class FilesController {
 
   /**
    * Retrieves a single file by ID
-   *
+   * 
    * This endpoint returns detailed information about a specific file,
    * including its name, type, parent folder, and visibility settings.
    * Users can only access files they own or files marked as public.
-   *
+   * 
    * @param {Object} req - Express request object
    * @param {Object} res - Express response object
    * @returns {Object} - JSON response with file data or error message
@@ -171,7 +182,7 @@ class FilesController {
 
     // Extract file ID from request parameters
     const fileId = req.params.id;
-
+    
     // Find the file in the database
     let file;
     try {
@@ -201,11 +212,11 @@ class FilesController {
 
   /**
    * Lists files with pagination
-   *
+   * 
    * This endpoint returns a paginated list of files for the authenticated user,
    * optionally filtered by a parent folder ID. It implements server-side
    * pagination to efficiently handle large file collections.
-   *
+   * 
    * @param {Object} req - Express request object
    * @param {Object} res - Express response object
    * @returns {Array} - JSON array of file data objects or error message
@@ -227,7 +238,7 @@ class FilesController {
     // Extract pagination and filtering parameters
     const parentId = req.query.parentId || 0;
     const page = parseInt(req.query.page || 0, 10);
-
+    
     // Calculate pagination offset (20 items per page)
     const pageSize = 20;
     const skip = page * pageSize;
@@ -263,14 +274,13 @@ class FilesController {
     return res.status(200).json(filesWithStringIds);
   }
 
-
   /**
    * Makes a file public
-   *
+   * 
    * This endpoint updates a file's visibility to public, allowing it
    * to be accessed by users other than the owner. Only the file owner
    * can publish their files.
-   *
+   * 
    * @param {Object} req - Express request object
    * @param {Object} res - Express response object
    * @returns {Object} - JSON response with updated file data or error message
@@ -291,7 +301,7 @@ class FilesController {
 
     // Extract file ID from request parameters
     const fileId = req.params.id;
-
+    
     // Find the file in the database
     let file;
     try {
@@ -301,7 +311,7 @@ class FilesController {
         { $set: { isPublic: true } },
         { returnDocument: 'after' } // Return the updated document
       );
-
+      
       // Extract the updated file from the result
       file = file.value;
     } catch (error) {
@@ -326,10 +336,10 @@ class FilesController {
 
   /**
    * Makes a file private
-   *
+   * 
    * This endpoint updates a file's visibility to private, restricting
    * access to only the owner. Only the file owner can unpublish their files.
-   *
+   * 
    * @param {Object} req - Express request object
    * @param {Object} res - Express response object
    * @returns {Object} - JSON response with updated file data or error message
@@ -350,7 +360,7 @@ class FilesController {
 
     // Extract file ID from request parameters
     const fileId = req.params.id;
-
+    
     // Find the file in the database
     let file;
     try {
@@ -360,7 +370,7 @@ class FilesController {
         { $set: { isPublic: false } },
         { returnDocument: 'after' } // Return the updated document
       );
-
+      
       // Extract the updated file from the result
       file = file.value;
     } catch (error) {
@@ -385,11 +395,12 @@ class FilesController {
 
   /**
    * Retrieves the content of a file
-   *
+   * 
    * This endpoint returns the actual content of a file, with the appropriate MIME type.
    * It includes access control checks to ensure only public files or files owned by
-   * the authenticated user are accessible.
-   *
+   * the authenticated user are accessible. For images, it supports size parameters
+   * to retrieve thumbnails.
+   * 
    * @param {Object} req - Express request object
    * @param {Object} res - Express response object
    * @returns {Stream} - File content with appropriate MIME type
@@ -397,7 +408,7 @@ class FilesController {
   static async getFile(req, res) {
     // Extract file ID from request parameters
     const fileId = req.params.id;
-
+    
     // Find the file in the database, regardless of owner
     let file;
     try {
@@ -444,11 +455,41 @@ class FilesController {
       return res.status(404).json({ error: 'Not found' });
     }
 
+    // Get the size query parameter (for thumbnails)
+    const size = req.query.size;
+    
+    // Determine which file to send based on size parameter
+    let filePath = file.localPath;
+    
+    // If size is specified and the file is an image, try to use the thumbnail
+    if (size && file.type === 'image') {
+      // Validate size parameter
+      const allowedSizes = ['500', '250', '100'];
+      if (!allowedSizes.includes(size)) {
+        return res.status(400).json({ error: 'Invalid size parameter' });
+      }
+      
+      // Construct the thumbnail path
+      const thumbnailPath = `${file.localPath}_${size}`;
+      
+      // Check if the thumbnail exists
+      if (fs.existsSync(thumbnailPath)) {
+        filePath = thumbnailPath;
+      } else {
+        return res.status(404).json({ error: 'Not found' });
+      }
+    }
+
+    // Check if the selected file exists on disk
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'Not found' });
+    }
+
     // Determine the MIME type based on the file name
     const mimeType = mime.lookup(file.name) || 'application/octet-stream';
-
+    
     // Read and return the file content with the correct MIME type
-    const fileContent = fs.readFileSync(file.localPath);
+    const fileContent = fs.readFileSync(filePath);
     res.setHeader('Content-Type', mimeType);
     return res.send(fileContent);
   }
